@@ -11,7 +11,7 @@ from gym.spaces.discrete import Discrete
 from gym import spaces
 from sandbox.rocky.tf.spaces import Box
 import gym
-import ple
+#import ple
 import os
 
 def one_hot(x, dim):
@@ -116,7 +116,7 @@ class VecIRLRewardEnv(VecEnvWrapper):
 
     def step_wait(self):
         self.venv.step_wait()
-        
+
 
 class EncoderWrappedEnv(VecEnvWrapper):
     def __init__(self, env, *, encoder):
@@ -128,15 +128,15 @@ class EncoderWrappedEnv(VecEnvWrapper):
             high=np.finfo(np.float32).max
         )
         print("Wrapping with encoder")
-        
+
     def step(self, acts):
         obs, rewards, done, info = self.venv.step(acts)
         obs = self.encoder.base_vector(obs)
         return obs, rewards, done, info
-    
+
     def reset(self):
         return self.encoder.base_vector(self.venv.reset())
-    
+
     def step_wait(self):
         self.venv.step_wait()
 
@@ -300,7 +300,7 @@ class JustPress1Environment(gym.Env):
 
         self.black = np.zeros(self.observation_space.shape).astype(np.uint8)
         self.white = np.ones(self.observation_space.shape).astype(np.uint8) * 255
-        
+
         self.random_seed = 0
         self.np_random = np.random.RandomState(0)
 
@@ -314,7 +314,7 @@ class JustPress1Environment(gym.Env):
             seed = 0
         self.random_seed = seed
         self.np_random.seed(seed)
-        
+
     def is_done(self):
         return self.np_random.random_sample() > .99
 
@@ -329,7 +329,7 @@ class JustPress1Environment(gym.Env):
 
     def render(self):
         raise NotImplementedError
-        
+
     def get_action_meanings(self):
         return ['NOOP', 'OP', 'USELESS1', 'USELESS2', 'USELESS3', 'USELESS4']
 
@@ -343,7 +343,7 @@ class SimonSaysEnvironment(JustPress1Environment):
         boundary = self.correct.shape[1] // 2
         self.correct[:,:boundary] = 255
         self.incorrect[:,boundary:] = 255
-        
+
         self.next_move = self.np_random.randint(2)
         self.obs_map = {
             0: self.black,
@@ -495,34 +495,34 @@ no_modifiers = {
     'vec_env_modifiers': []
 }
 
-PLEPong = make_ple_game(ple.games.pong.Pong, 'rgb')
-PLEPongState = make_ple_game(ple.games.pong.Pong, 'state_vector')
-PLECatcher = make_ple_game(ple.games.catcher.Catcher, 'rgb', init_lives=10000)
-PLECatcherState = make_ple_game(ple.games.catcher.Catcher, 'state_vector', init_lives=10000)
-
-gym.envs.register(
-    id='PLEPong-v0',
-    max_episode_steps=100000,
-    entry_point='atari_irl.environments:PLEPong'
-)
-
-gym.envs.register(
-    id='PLEPongState-v0',
-    max_episode_steps=100000,
-    entry_point='atari_irl.environments:PLEPongState'
-)
-
-gym.envs.register(
-    id='PLECatcher-v0',
-    max_episode_steps=100000,
-    entry_point='atari_irl.environments:PLECatcher'
-)
-
-gym.envs.register(
-    id='PLECatcherState-v0',
-    max_episode_steps=100000,
-    entry_point='atari_irl.environments:PLECatcherState'
-)
+#PLEPong = make_ple_game(ple.games.pong.Pong, 'rgb')
+#PLEPongState = make_ple_game(ple.games.pong.Pong, 'state_vector')
+#PLECatcher = make_ple_game(ple.games.catcher.Catcher, 'rgb', init_lives=10000)
+#PLECatcherState = make_ple_game(ple.games.catcher.Catcher, 'state_vector', init_lives=10000)
+#
+#gym.envs.register(
+#    id='PLEPong-v0',
+#    max_episode_steps=100000,
+#    entry_point='atari_irl.environments:PLEPong'
+#)
+#
+#gym.envs.register(
+#    id='PLEPongState-v0',
+#    max_episode_steps=100000,
+#    entry_point='atari_irl.environments:PLEPongState'
+#)
+#
+#gym.envs.register(
+#    id='PLECatcher-v0',
+#    max_episode_steps=100000,
+#    entry_point='atari_irl.environments:PLECatcher'
+#)
+#
+#gym.envs.register(
+#    id='PLECatcherState-v0',
+#    max_episode_steps=100000,
+#    entry_point='atari_irl.environments:PLECatcherState'
+#)
 
 
 env_mapping = {

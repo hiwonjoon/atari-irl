@@ -25,7 +25,7 @@ def print_log(
         *, model, run_info, batching_config,
         lossvals, update, fps, epinfobuf, tnow, tfirststart
 ):
-    ev = explained_variance(run_info.values, run_info.returns)
+    ev = explained_variance(np.array(run_info.values).flatten(), np.array(run_info.returns).flatten())
     logger.logkv("serial_timesteps", update * batching_config.nsteps)
     logger.logkv("nupdates", update)
     logger.logkv("total_timesteps", update * batching_config.nbatch)
@@ -167,6 +167,10 @@ class Learner:
     @property
     def update(self):
         return self._update
+
+    @property
+    def mean_reward(self):
+        return safemean([epinfo['r'] for epinfo in self._epinfobuf])
 
     def obtain_samples(self, itr):
         # Run the model on the environments

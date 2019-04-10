@@ -12,12 +12,12 @@ from sandbox.rocky.tf.policies.base import StochasticPolicy
 from sandbox.rocky.tf.distributions.categorical import Categorical
 from sandbox.rocky.tf.spaces.box import Box
 
-from airl.algos.irl_trpo import IRLTRPO
-from airl.models.airl_state import AIRL
-from airl.utils.log_utils import rllab_logdir
-from airl.models.fusion_manager import RamFusionDistr
-from airl.utils import TrainingIterator
-from airl.models.architectures import relu_net
+from inverse_rl.algos.irl_trpo import IRLTRPO
+from inverse_rl.models.airl_state import AIRL
+from inverse_rl.utils.log_utils import rllab_logdir
+from inverse_rl.models.fusion_manager import RamFusionDistr
+from inverse_rl.utils import TrainingIterator
+from inverse_rl.models.architectures import relu_net
 
 from baselines.ppo2.policies import CnnPolicy, MlpPolicy
 from baselines.a2c.utils import conv, fc, conv_to_fc
@@ -102,8 +102,8 @@ class DiscreteIRLPolicy(StochasticPolicy, Serializable):
         if init_location:
             data = joblib.load(open(init_location, 'rb'))
             self.restore_from_snapshot(data['policy_params'])
-            
-            
+
+
 
     @property
     def vectorized(self):
@@ -209,7 +209,7 @@ class DiscreteIRLPolicy(StochasticPolicy, Serializable):
                 print(f"Warning: different values for {key}")
         self.restore_param_values(data['tf_params'])
 
-        
+
 def batch_norm(x, name):
     shape = (1, *x.shape[1:])
     with tf.variable_scope(name):
@@ -218,8 +218,8 @@ def batch_norm(x, name):
         offset = tf.get_variable('offset', shape, initializer=tf.constant_initializer(0.0))
         scale = tf.get_variable('scale', shape, initializer=tf.constant_initializer(1.0))
     return tf.nn.batch_normalization(x, mean, variance, offset, scale, 0.001, name)
-   
-    
+
+
 def dcgan_cnn(unscaled_images, **conv_kwargs):
     scaled_images = tf.cast(unscaled_images, tf.float32) / 255.
     activ = lambda name, inpt: tf.nn.leaky_relu(batch_norm(inpt, name))
@@ -232,18 +232,18 @@ def dcgan_cnn(unscaled_images, **conv_kwargs):
 def cnn_net(x, actions=None, dout=1, **conv_kwargs):
     h = dcgan_cnn(x, **conv_kwargs)
     activ = lambda name, inpt: tf.nn.leaky_relu(batch_norm(inpt, name))
-    
+
     if actions is not None:
         assert dout == 1
         h = tf.concat([actions, h], axis=1)
-    
+
     h_final = activ('h_final', fc(h, 'fc1', nh=512, init_scale=np.sqrt(2)))
     return fc(h_final, 'output', nh=dout, init_scale=np.sqrt(2))
 
 def mlp_net(x, layers=2, actions=None, dout=1):
     if actions is not None:
         x = tf.concat([x, actions], axis=1)
-    return relu_net(x, layers=layers, dout=dout) 
+    return relu_net(x, layers=layers, dout=dout)
 
 
 class AtariAIRL(AIRL):
@@ -304,24 +304,24 @@ class AtariAIRL(AIRL):
                 self.encode_fn = self.encoder.base_vector
             else:
                 self.encode_fn = self.encoder.encode
-                
-        
+
+
         if fusion:
             self.fusion = RamFusionDistr(100, subsample_ratio=0.5)
         else:
             self.fusion = None
-            
+
         if self.encoder:
             self.dO = self.encoder.encoding_shape
             self.dOshape = self.encoder.encoding_shape
         else:
             self.dO = env_spec.observation_space.flat_dim
             self.dOshape = env_spec.observation_space.shape
-            
+
         if drop_framestack:
             assert len(self.dOshape) == 3
             self.dOshape = (*self.dOshape[:-1], 1)
-            
+
         self.dU = env_spec.action_space.flat_dim
         assert isinstance(env_spec.action_space, Box)
         self.score_discrim = score_discrim
@@ -333,7 +333,7 @@ class AtariAIRL(AIRL):
         self.max_itrs = max_itrs
         self.drop_framestack = drop_framestack
         self.only_show_scores = only_show_scores
-        
+
         self.expert_cache = None
         self.rescore_expert_trajs = rescore_expert_trajs
         # build energy model
@@ -386,7 +386,7 @@ class AtariAIRL(AIRL):
             self.grad_reward = tf.gradients(self.reward, [self.obs_t, self.act_t])
 
             self.modify_obs = self.get_ablation_modifiers()
-            
+
             self.score_mean = 0
             self.score_std = 1
 
@@ -454,7 +454,7 @@ class AtariAIRL(AIRL):
 
             return obs
         return process_obs
-    
+
     def _process_discrim_output(self, score):
         score = np.clip(score, 1e-7, 1-1e-7)
         score = np.log(score) - np.log(1-score)
@@ -508,7 +508,7 @@ class AtariAIRL(AIRL):
             if self.encoder:
                 expert_obs_batch = self.encode_fn(expert_obs_batch, expert_act_batch.argmax(axis=1))
                 nexpert_obs_batch = self.encode_fn(nexpert_obs_batch, nexpert_act_batch.argmax(axis=1))
-                
+
 
             # Build feed dict
             labels = np.zeros((batch_size*2, 1))
@@ -539,7 +539,7 @@ class AtariAIRL(AIRL):
             assert len(score) == batch_size
             assert np.sum(labels[non_expert_slice]) == 0
             raw_discrim_scores.append(raw_score)
-            
+
             it.record('loss', loss)
             it.record('accuracy', acc)
             it.record('avg_score', np.mean(score))
@@ -550,18 +550,18 @@ class AtariAIRL(AIRL):
                 mean_acc = it.pop_mean('accuracy')
                 print('\tAccuracy:%f' % mean_acc)
                 mean_score = it.pop_mean('avg_score')
-                
+
 
         if logger:
             logger.record_tabular('GCLDiscrimLoss', mean_loss)
             logger.record_tabular('GCLDiscrimAccuracy', mean_acc)
             logger.record_tabular('GCLMeanScore', mean_score)
-            
+
         # set the center for our normal distribution
         scores = np.hstack(raw_discrim_scores)
         self.score_std = np.std(scores)
         self.score_mean = np.mean(scores)
-        
+
         return mean_loss
 
     @overrides
@@ -585,7 +585,7 @@ class AtariAIRL(AIRL):
                 }
             )
             score, _ = self._process_discrim_output(scores)
-            
+
         else:
             obs, acts = samples.extract_paths(
                 ('observations', 'actions'), obs_modifier=self.modify_obs
@@ -594,10 +594,10 @@ class AtariAIRL(AIRL):
                 self.reward, feed_dict={self.act_t: acts, self.obs_t: obs}
             )
             score = reward[:,0]
-        
+
         if np.isnan(np.mean(score)):
             import pdb; pdb.set_trace()
-            
+
         # TODO(Aaron, maybe): do something with show_grad
         return samples._ravel_train_batch_to_time_env_batch(score)
 
@@ -1009,7 +1009,7 @@ class IRLRunner(IRLTRPO):
         for i in range(self.buffer_batch_size):
             batch = self.obtain_samples(ppo_itr)
             logger.log(f"Sampled iteration {i}")
-            
+
             train_itr = (itr > 0 or self.skip_discriminator) and i % self.policy_update_freq == 0
 
             if not self.skip_discriminator:
@@ -1021,13 +1021,13 @@ class IRLRunner(IRLTRPO):
                         batch.rewards *= 0
                         batch.rewards += self.irl_model.eval(batch, gamma=self.discount, itr=itr)
                         logger.log(f"GCL Score Average: {np.mean(batch.rewards)}")
-                        
+
                 buffer.add(batch)
 
             if not self.skip_policy_update and train_itr:
                 logger.log("Optimizing policy...")
                 self.optimize_policy(ppo_itr, batch)
-                
+
             ppo_itr += 1
             del batch
 
@@ -1038,7 +1038,7 @@ class IRLRunner(IRLTRPO):
 
         ppo_itr = 0
         buffer = None
-        
+
         if not self.skip_discriminator:
             batch = self.obtain_samples(ppo_itr)
             buffer = sampling.PPOBatchBuffer(batch, self.buffer_batch_size)

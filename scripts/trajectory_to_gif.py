@@ -1,8 +1,12 @@
+import matplotlib
+matplotlib.use('agg')
+
 import numpy as np
 import pickle
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import argparse
+
 
 def make_gif(traj, fname, title=''):
     fig, ax = plt.subplots(figsize=(2, 2))
@@ -18,8 +22,8 @@ def make_gif(traj, fname, title=''):
     anim = FuncAnimation(fig, update, frames=np.arange(0, min(1000, len(traj))), interval=50)
     anim.save(fname, dpi=80, writer='imagemagick')
     plt.close()
-    
-    
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -28,9 +32,9 @@ if __name__ == '__main__':
     parser.add_argument('--trajectories_file', default='trajectories.pkl')
     parser.add_argument('--output_file', default='trajectories.gif')
     parser.add_argument('--title', default='')
-    
+
     args = parser.parse_args()
-    
+
     ts = pickle.load(open(args.trajectories_file, 'rb'))
-    
+
     make_gif(ts[0]['observations'], args.output_file, args.title)

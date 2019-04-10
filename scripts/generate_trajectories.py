@@ -1,12 +1,13 @@
+import os
 from atari_irl import utils, policies, environments, irl, training, sampling, behavioral_cloning
 import pickle
-from arguments import add_atari_args, add_trajectory_args, add_expert_args, tf_context_for_args, env_context_for_args
+from .arguments import add_atari_args, add_trajectory_args, add_expert_args, tf_context_for_args, env_context_for_args
 import argparse
 import tensorflow as tf
 import joblib
 from baselines.ppo2.policies import CnnPolicy, MlpPolicy
 from atari_irl.irl import cnn_net
-from airl.models.architectures import relu_net
+from inverse_rl.models.architectures import relu_net
 
 def generate_trajectories(args):
     # environments are not one hot coded, so we don't wrap this
@@ -68,7 +69,8 @@ def generate_trajectories(args):
                 render=args.render
             )
 
-    pickle.dump(ts, open(args.trajectories_file, 'wb'))
+    p = os.path.join(args.expert_path,args.trajectories_file)
+    pickle.dump(ts, open(p, 'wb'))
 
 
 if __name__ == '__main__':

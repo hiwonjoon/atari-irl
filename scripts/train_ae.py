@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--env', help='environment', type=str, default='PongNoFrameskip-v4')
 parser.add_argument('--num_envs', help='number of environments', type=int, default=8)
 parser.add_argument('--seed', help='random seed', type=int, default=0)
+parser.add_argument('--log_path', default='./autoencoder/pong')
 parser.add_argument(
     '--encoder_type',
     help='type of encoder',
@@ -49,10 +50,10 @@ env_cfg = {
 extra_args = {}
 if args.encoder_type == 'non_pixel_class' and 'Pong' in args.env:
     extra_args['trim_score'] = True
-    
+
 with utils.TfEnvContext(tf_cfg, env_cfg) as context:
-    utils.logger.configure()
-    dirname = utils.logger.get_dir() 
+    utils.logger.configure(dir=args.log_path)
+    dirname = utils.logger.get_dir()
     print(f"logging in {dirname}")
     vae = encoder(
         obs_shape=context.env_context.environments.observation_space.shape,
@@ -62,7 +63,7 @@ with utils.TfEnvContext(tf_cfg, env_cfg) as context:
         **extra_args
     )
     LR = 1e-4
-    
+
     def args(*, lr, obs, noise_scale=.2):
         return {
             'lr': lr,
@@ -85,13 +86,13 @@ with utils.TfEnvContext(tf_cfg, env_cfg) as context:
         for t in range(32):
             acts = [env.action_space.sample() for _ in range(env.num_envs)]
             obs.append(env.step(acts)[0])
-            
+
         obs_arr = np.array(obs).astype(np.uint8)
         obs.clear()
         del obs
         obs_batch = ppo2.sf01(obs_arr)
         del obs_arr
-                              
+
         if i % 100 == 0:
             img, loss = vae.compare(obs_batch, disp_p=.1)
             losses.append((i, loss))

@@ -1,0 +1,9 @@
+[submodule "rllab"]
+	path = rllab
+	url = git@github.com:rll/rllab.git
+[submodule "inverse_rl"]
+	path = inverse_rl
+	url = git@github.com:justinjfu/inverse_rl.git
+[submodule "baselines"]
+	path = baselines
+	url = git@github.com:openai/baselines.git

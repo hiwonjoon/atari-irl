@@ -7,6 +7,8 @@ from rllab.misc.overrides import overrides
 from rllab.sampler.base import BaseSampler
 from sandbox.rocky.tf.samplers.vectorized_sampler import VectorizedSampler
 
+from baselines.common.runners import AbstractEnvRunner
+
 from baselines.ppo2 import ppo2
 
 """
@@ -275,7 +277,7 @@ class DummyAlgo:
         self.policy = policy
 
 
-class PPOBatchSampler(BaseSampler, ppo2.AbstractEnvRunner):
+class PPOBatchSampler(BaseSampler, AbstractEnvRunner):
     # If you want to use the baselines PPO sampler as a sampler for the
     # airl interfaced code, use this.
     def __init__(self, algo, *, nsteps, baselines_venv, gamma=0.99, lam=0.95):
@@ -287,7 +289,7 @@ class PPOBatchSampler(BaseSampler, ppo2.AbstractEnvRunner):
         # This means that we store the observations, states, and dones so that
         # we can continue a run.
         # We have not actually tested that functionality
-        ppo2.AbstractEnvRunner.__init__(self, env=env, model=model, nsteps=nsteps)
+        AbstractEnvRunner.__init__(self, env=env, model=model, nsteps=nsteps)
         self.algo = algo
         self.env = env
         self.model = model
@@ -532,12 +534,12 @@ class PPOBatchBuffer(PPOSample):
             getattr(self, key)[s] = getattr(sample, key)
 
         self.cur_idx += self.batch_T
-        
+
     def to_ppo_batches(self, batch_size):
         for start in range(0, self.batch_T * self.n_batches, batch_size):
             end = start + batch_size
             s = slice(start, end)
-            
+
             yield self.sampler._process_ppo_samples(
                 obs=self.obs[s],
                 rewards=self.rewards[s],

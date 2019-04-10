@@ -1,13 +1,13 @@
 from atari_irl import utils, training, policies
 import argparse
-from arguments import add_atari_args, add_expert_args, env_context_for_args, tf_context_for_args
+from .arguments import add_atari_args, add_expert_args, env_context_for_args, tf_context_for_args
 from baselines.ppo2.policies import MlpPolicy, CnnPolicy
 import os.path as osp
 import os
 
 
 def train_expert(args):
-    utils.logger.configure()
+    utils.logger.configure(dir=args.expert_path)
     with tf_context_for_args(args):
         with env_context_for_args(args) as context:
             learner = training.Learner(

@@ -1,5 +1,5 @@
 from atari_irl import utils, environments, irl
-from arguments import add_atari_args, add_trajectory_args, add_irl_args, env_context_for_args
+from .arguments import add_atari_args, add_trajectory_args, add_irl_args, env_context_for_args
 import argparse
 from baselines import logger
 import tensorflow as tf
@@ -19,7 +19,7 @@ def train_airl(args):
     )
     tf_cfg.gpu_options.allow_growth = True
 
-    logger.configure()
+    logger.configure(dir=args.log_path)
     reward, policy_params = irl.airl(
         logger.get_dir(),
         tf_cfg=tf_cfg,
@@ -61,6 +61,7 @@ if __name__ == '__main__':
     add_atari_args(parser)
     add_trajectory_args(parser)
     add_irl_args(parser)
+    parser.add_argument('--log_path', default='./airl/pong')
 
     args = parser.parse_args()
     train_airl(args)
